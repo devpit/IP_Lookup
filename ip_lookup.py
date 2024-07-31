@@ -42,6 +42,9 @@ def format_data(data):
 
 def show_help():
     help_text = (
+        f"{Fore.GREEN}Developed by Pit{Style.RESET_ALL}\n"
+        f"{Fore.GREEN}For more tools and scripts, visit{Style.RESET_ALL}\n"
+        f"{Fore.GREEN}https://github.com/devpit{Style.RESET_ALL}\n\n"
         f"{Fore.WHITE}Usage of the IP lookup script:{Style.RESET_ALL}\n\n"
         f"{Fore.YELLOW}python ip_lookup.py -ip IP_ADDRESS{Style.RESET_ALL}\n\n"
         f"{Fore.WHITE}Parameters:{Style.RESET_ALL}\n"
