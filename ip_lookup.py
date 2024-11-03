@@ -2,32 +2,33 @@ import requests
 import argparse
 import sys
 from colorama import Fore, Style, init
+import re
+import time
+import logging
 
 # Initialize colorama
 init(autoreset=True)
 
-def lookup_ip(ip):
-    # API URL from IPinfo with the given IP
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
+def is_valid_ip(ip):
+    pattern = re.compile(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+    return bool(pattern.match(ip))
+
+def lookup_ip(session, ip):
     url = f"https://ipinfo.io/{ip}/json"
-    
     try:
-        # Make the GET request to the API
-        response = requests.get(url)
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            data = response.json()
-            return data
-        else:
-            return {"error": "Unable to fetch IP data"}
-    except Exception as e:
+        response = session.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
         return {"error": str(e)}
 
 def format_data(data):
     if "error" in data:
         return data["error"]
     
-    # Format the data for display
     formatted_data = (
         f"IP: {data.get('ip', 'Not found')}\n"
         f"City: {data.get('city', 'Not found')}\n"
@@ -42,23 +43,35 @@ def format_data(data):
 
 def show_help():
     help_text = (
-        f"{Fore.GREEN}Developed by Pit{Style.RESET_ALL}\n"
-        f"{Fore.GREEN}For more tools and scripts, visit{Style.RESET_ALL}\n"
-        f"{Fore.GREEN}https://github.com/devpit{Style.RESET_ALL}\n\n"
-        f"{Fore.WHITE}Usage of the IP lookup script:{Style.RESET_ALL}\n\n"
-        f"{Fore.YELLOW}python ip_lookup.py -ip IP_ADDRESS{Style.RESET_ALL}\n\n"
-        f"{Fore.WHITE}Parameters:{Style.RESET_ALL}\n"
-        f"  {Fore.CYAN}-ip, --ipaddress{Style.RESET_ALL}  IP address for lookup\n"
-        f"  {Fore.CYAN}-h, --help{Style.RESET_ALL}        Show this help message and exit\n\n"
-        f"{Fore.WHITE}Usage examples:{Style.RESET_ALL}\n"
-        f"  {Fore.YELLOW}python ip_lookup.py -ip 8.8.8.8{Style.RESET_ALL}\n"
+        f"\n"
+        f"  {Fore.GREEN}██ ██████      ██       ██████   ██████  ██   ██ ██    ██ ██████  {Style.RESET_ALL}\n"
+        f"  {Fore.GREEN}██ ██   ██     ██      ██    ██ ██    ██ ██  ██  ██    ██ ██   ██ {Style.RESET_ALL}\n"
+        f"  {Fore.GREEN}██ ██████      ██      ██    ██ ██    ██ █████   ██    ██ ██████  {Style.RESET_ALL}\n"
+        f"  {Fore.GREEN}██ ██          ██      ██    ██ ██    ██ ██  ██  ██    ██ ██      {Style.RESET_ALL}\n"
+        f"  {Fore.GREEN}██ ██          ███████  ██████   ██████  ██   ██  ██████  ██ {Style.RESET_ALL}\n\n"
+        f"  {Fore.WHITE}IP Lookup | Terminal Query - Usage:{Style.RESET_ALL}\n\n"
+        f"  {Fore.WHITE}Parameters:{Style.RESET_ALL}\n\n"
+        f"  {Fore.CYAN}-ip, --ipaddress{Style.RESET_ALL} IP address for lookup\n"
+        f"  {Fore.CYAN}-h, --help{Style.RESET_ALL} Show this help message and exit\n\n"
+        f"  {Fore.WHITE}Usage examples:{Style.RESET_ALL}\n\n"
+        f"  {Fore.YELLOW}python ip_lookup.py -ip 8.8.8.8{Style.RESET_ALL}\n\n"
+        f"  {Fore.WHITE}Credits:{Style.RESET_ALL}\n"
+        f"  {Fore.WHITE}Developed by Pit:{Style.RESET_ALL}\n"
+        f"  {Fore.WHITE}https://github.com/devpit/IP_Lookup{Style.RESET_ALL}\n"
     )
     print(help_text)
+
+def handle_ip_lookup(session, ip):
+    if not is_valid_ip(ip):
+        print(Fore.RED + "Invalid IP address format." + Style.RESET_ALL)
+        return
+    ip_data = lookup_ip(session, ip)
+    print(format_data(ip_data))
 
 def main():
     parser = argparse.ArgumentParser(
         description="Lookup information for an IP address.",
-        add_help=False  # Disable the default argparse help message
+        add_help=False
     )
     parser.add_argument("-ip", "--ipaddress", help="IP address for lookup.")
     parser.add_argument("-h", "--help", action="store_true", help="Show this help message and exit")
@@ -73,10 +86,8 @@ def main():
         show_help()
         sys.exit(1)
     
-    ip = args.ipaddress
-    ip_data = lookup_ip(ip)
-    formatted_data = format_data(ip_data)
-    print(formatted_data)
+    session = requests.Session()
+    handle_ip_lookup(session, args.ipaddress)
     
     while True:
         next_step = input(f"\n{Fore.WHITE}Enter a new IP to lookup or type 'exit' to quit:{Style.RESET_ALL} ").strip()
@@ -84,9 +95,8 @@ def main():
             print(f"{Fore.YELLOW}Exiting...{Style.RESET_ALL}")
             break
         elif next_step:
-            ip_data = lookup_ip(next_step)
-            formatted_data = format_data(ip_data)
-            print(formatted_data)
+            handle_ip_lookup(session, next_step)
+            time.sleep(1)
 
 if __name__ == "__main__":
     main()
